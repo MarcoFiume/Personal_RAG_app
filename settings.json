@@ -1,0 +1,12 @@
+{
+    "batch_size": 16,
+    "num_workers": 4,
+    "model_id": "google/siglip2-base-patch16-naflex",
+    "index_name": "image_idx",
+    "top_k": 50,
+    "max_top_k": 500,
+    "page_size": 10,
+    "max_page_size": 50,
+    "img_viewer_cols": 5,
+    "img_viewer_max_cols": 10
+}
