@@ -58,6 +58,3 @@ A Retrieval-Augmented Generation (RAG) demo application that allows you to build
 - `ui.py`: Contains the Streamlit UI components and layout.
 - `utils.py`: Utility functions for configuration management.
 - `settings.json`: Application configuration parameters.
-
----
-*This is a personal project for my resume, demonstrating integration of deep learning models with vector databases and interactive web interfaces.*
