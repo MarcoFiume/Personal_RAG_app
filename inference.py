@@ -5,14 +5,14 @@ from torch.utils.data import Dataset, DataLoader
 from transformers import AutoProcessor, AutoModel
 from pathlib import Path
 
-FILE_EXTENSIONS = {".jpg", ".jpeg", ".png"}
+FILE_EXTENSIONS = {'.jpg', '.jpeg', '.png'}
 
 
 class ImageDataset(Dataset):
     def __init__(self, root_dir, vector_db=None):
         self.root_dir = Path(root_dir)
         all_paths = [
-            p for p in self.root_dir.rglob("*") if p.suffix.lower() in FILE_EXTENSIONS
+            p for p in self.root_dir.rglob('*') if p.suffix.lower() in FILE_EXTENSIONS
         ]
         if vector_db is not None:
             existing = vector_db.exists_batch([str(p) for p in all_paths])
@@ -26,16 +26,16 @@ class ImageDataset(Dataset):
     def __getitem__(self, idx):
         img_path = self.image_paths[idx]
         try:
-            image = Image.open(img_path).convert("RGB")
+            image = Image.open(img_path).convert('RGB')
             return image, str(img_path)
         except Exception as e:
-            print(f"Error loading {img_path}: {e}")
+            print(f'Error loading {img_path}: {e}')
             return None, str(img_path)
 
 
 class ImgEmbeddingEngine:
     def __init__(self, model_id: str):
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.model = AutoModel.from_pretrained(model_id).to(self.device)
         self.processor = AutoProcessor.from_pretrained(model_id)
 
@@ -52,7 +52,7 @@ class ImgEmbeddingEngine:
         def collate_fn(batch):
             batch = [b for b in batch if b[0] is not None]
             images, paths = zip(*batch)
-            input_images = self.processor(images=list(images), return_tensors="pt", padding=True)
+            input_images = self.processor(images=list(images), return_tensors='pt', padding=True)
             return input_images, paths
 
         dataloader = DataLoader(
@@ -66,19 +66,19 @@ class ImgEmbeddingEngine:
             for inputs, paths in dataloader:
                 inputs = {k: v.to(self.device) for k, v in inputs.items()}
                 outputs = self.model.get_image_features(**inputs)
-                features = outputs.pooler_output if hasattr(outputs, "pooler_output") else outputs
+                features = outputs.pooler_output if hasattr(outputs, 'pooler_output') else outputs
                 embeddings = torch.nn.functional.normalize(features, p=2, dim=1)
                 vector_db.store_batch(paths, embeddings.cpu().numpy())
-                progress += len(inputs["pixel_values"])
-                progress_bar.progress(progress / total_images, text=f"Extracted {progress}/{total_images} embeddings")
+                progress += len(inputs['pixel_values'])
+                progress_bar.progress(progress / total_images, text=f'Extracted {progress}/{total_images} embeddings')
 
         return len(dataset)
 
     def extract_text_embedding(self, prompt: str) -> np.ndarray:
-        inputs = self.processor(text=[prompt], return_tensors="pt", padding="max_length", max_length=64)
+        inputs = self.processor(text=[prompt], return_tensors='pt', padding='max_length', max_length=64)
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
         with torch.no_grad():
             outputs = self.model.get_text_features(**inputs)
-            features = outputs.pooler_output if hasattr(outputs, "pooler_output") else outputs
+            features = outputs.pooler_output if hasattr(outputs, 'pooler_output') else outputs
             embedding = torch.nn.functional.normalize(features, p=2, dim=1)
         return embedding.squeeze(0).cpu().numpy()
