@@ -54,7 +54,7 @@ def search_tab(engine, vector_db):
         )
         st.subheader('Image viewer layout:')
         n_col = st.slider(
-            "Number of columns",
+            'Number of columns',
             2,
             st.session_state['settings']['img_viewer_max_cols'],
             st.session_state['settings']['img_viewer_cols'],
