@@ -1,17 +1,16 @@
 import redis
+import numpy as np
 from redis.commands.search.field import VectorField
 from redis.commands.search.index_definition import IndexDefinition, IndexType
 from redis.commands.search.query import Query
 
-HOST = 'localhost'
-PORT = 6379
 SEARCH_ALGORITHM = 'HNSW'
 DISTANCE_METRIC = 'COSINE'
 DTYPE = 'FLOAT32'
 
-class VectorDatabase:
-    def __init__(self, index_name, vector_dim):
-        self.r = redis.Redis(host=HOST, port=PORT, decode_responses=False)
+class RedisVectorDatabase:
+    def __init__(self, index_name, vector_dim, host, port):
+        self.r = redis.Redis(host=host, port=port, decode_responses=False)
         self.index_name = index_name
         self.vector_dim = vector_dim
         self._create_index()
@@ -37,7 +36,7 @@ class VectorDatabase:
                     {
                         'TYPE': DTYPE,
                         'DIM': self.vector_dim,
-                    'DISTANCE_METRIC': DISTANCE_METRIC,
+                        'DISTANCE_METRIC': DISTANCE_METRIC,
                     },
                 )
             ]
@@ -50,41 +49,41 @@ class VectorDatabase:
         """Return the subset of paths already stored in the DB."""
         pipe = self.r.pipeline()
         for path in paths:
-            pipe.exists(f"img:{path}")
+            pipe.exists(f'img:{path}')
         results = pipe.execute()
         return {path for path, exists in zip(paths, results) if exists}
 
-    def store(self,path, embedding):
-        key = f"img:{path}"
+    def store(self, path, embedding):
+        key = f'img:{path}'
         self.r.hset(key, mapping={
-            'embedding': embedding.tobytes()
+            'embedding': embedding.astype(np.float32).tobytes()
         })
 
     def store_batch(self, paths, embeddings):
         pipe = self.r.pipeline()
         for path, embedding in zip(paths, embeddings):
-            key = f"img:{path}"
+            key = f'img:{path}'
             pipe.hset(key, mapping={'embedding': embedding.tobytes()})
         pipe.execute()
 
-    def search(self, query_embedding, top_k = 5, page=0, page_size=10):
+    def search(self, query_embedding, top_k = 5, page = 0, page_size = 10):
         """Find the top_k most similar documents to the query embedding."""
         query_vector = query_embedding.tobytes()
 
         query = (
-            Query(f"*=>[KNN {top_k} @embedding $vector AS score]")
+            Query(f'*=>[KNN {top_k} @embedding $vector AS score]')
             .return_fields('score')
-            .sort_by("score")
-            .paging(page*page_size, page_size)
+            .sort_by('score')
+            .paging(page * page_size, page_size)
             .dialect(2)
         )
 
-        results = self.r.ft(self.index_name).search(query, {"vector": query_vector})
+        results = self.r.ft(self.index_name).search(query, {'vector': query_vector})
         return [
             {'path': img.id.removeprefix('img:'), 'score': float(img.score)}
             for img in results.docs
         ]
 
-    def flush(self):
+    def flush(self) -> None:
         self.r.flushdb()
         self._create_index()

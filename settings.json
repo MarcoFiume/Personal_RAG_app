@@ -8,5 +8,9 @@
     "page_size": 10,
     "max_page_size": 50,
     "img_viewer_cols": 5,
-    "img_viewer_max_cols": 10
+    "img_viewer_max_cols": 10,
+    "vector_db_backend": "redis",
+    "sqlite_db_path": "vector_db.sqlite",
+    "redis_host": "localhost",
+    "redis_port": 6379
 }
