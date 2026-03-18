@@ -1,7 +1,7 @@
 import streamlit as st
 from inference import ImgEmbeddingEngine
 from db import get_vector_db
-from ui import sidebar, library_tab, search_tab
+from ui import sidebar, library_tab, search_tab, rag_chat_tab
 from utils import load_settings
 
 @st.cache_resource(show_spinner='Loading model...')
@@ -25,10 +25,13 @@ vector_db = load_vector_db(
     engine.vector_dim
 )
 
-tab1, tab2 = st.tabs(['Manage image library', 'Search images'])
+tab1, tab2, tab3 = st.tabs(['Manage image library', 'Search images', 'RAG chat'])
 
 with tab1:
     library_tab(engine, vector_db)
 
 with tab2:
     search_tab(engine, vector_db)
+
+with tab3:
+    rag_chat_tab(engine, vector_db)

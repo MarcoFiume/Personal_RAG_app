@@ -37,6 +37,7 @@ class ImgEmbeddingEngine:
     def __init__(self, model_id: str):
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.model = AutoModel.from_pretrained(model_id).to(self.device)
+        self.model.eval()
         self.processor = AutoProcessor.from_pretrained(model_id)
 
     @property
